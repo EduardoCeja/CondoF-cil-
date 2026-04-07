@@ -16,8 +16,21 @@ type User = {
   telefono?: string;
 };
 
+type NotificationType = "reserva" | "incidencia" | "pago";
+
+type AppNotification = {
+  id: string;
+  userId: string;
+  tipo: NotificationType;
+  titulo: string;
+  mensaje: string;
+  fecha: string;
+  leida: boolean;
+};
+
 const LS_USERS = "users";
 const LS_CURRENT_USER = "currentUser";
+const LS_NOTIFICATIONS = "notifications";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -71,6 +84,7 @@ export default function LoginPage() {
         localStorage.setItem(LS_USERS, JSON.stringify(demoUsers));
       }
     } catch {
+      // ignore
     }
   }, []);
 
@@ -96,6 +110,58 @@ export default function LoginPage() {
     setSuccessMsg(message);
   }
 
+  function seedNotificationsForUser(user: User) {
+    try {
+      const existing: AppNotification[] = JSON.parse(
+        localStorage.getItem(LS_NOTIFICATIONS) || "[]"
+      );
+
+      const alreadyHasNotifications = existing.some((n) => n.userId === user.id);
+
+      if (alreadyHasNotifications) return;
+
+      const demoNotifications: AppNotification[] = [
+        {
+          id: crypto.randomUUID(),
+          userId: user.id,
+          tipo: "reserva",
+          titulo: "Reserva confirmada",
+          mensaje:
+            "Tu reserva del salón de eventos fue confirmada para el día 12/05/2026 a las 18:00 hrs.",
+          fecha: new Date().toISOString(),
+          leida: false,
+        },
+        {
+          id: crypto.randomUUID(),
+          userId: user.id,
+          tipo: "incidencia",
+          titulo: "Actualización de incidencia",
+          mensaje:
+            "La incidencia #INC-2026-014 cambió a estatus: En proceso.",
+          fecha: new Date(Date.now() - 1000 * 60 * 30).toISOString(),
+          leida: false,
+        },
+        {
+          id: crypto.randomUUID(),
+          userId: user.id,
+          tipo: "pago",
+          titulo: "Recordatorio de pago",
+          mensaje:
+            "Tienes un pago pendiente de mantenimiento con vencimiento el 15/05/2026.",
+          fecha: new Date(Date.now() - 1000 * 60 * 60 * 2).toISOString(),
+          leida: false,
+        },
+      ];
+
+      localStorage.setItem(
+        LS_NOTIFICATIONS,
+        JSON.stringify([...demoNotifications, ...existing])
+      );
+    } catch {
+      // ignore
+    }
+  }
+
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
 
@@ -110,6 +176,7 @@ export default function LoginPage() {
 
       if (user) {
         localStorage.setItem(LS_CURRENT_USER, JSON.stringify(user));
+        seedNotificationsForUser(user);
         showSuccess("¡Bienvenido! Redirigiendo...");
         setTimeout(() => router.push("/dashboard"), 900);
       } else {
@@ -126,7 +193,6 @@ export default function LoginPage() {
       className="min-h-screen flex items-center justify-center p-4"
     >
       <div className="bg-white rounded-2xl shadow-2xl p-8 w-full max-w-md">
-        {/* Logo */}
         <div className="text-center mb-8">
           <div className="inline-block bg-gradient-to-r from-blue-500 to-purple-600 p-3 rounded-full mb-4">
             <svg
@@ -149,7 +215,6 @@ export default function LoginPage() {
           <p className="text-gray-600 mt-2">Gestión inteligente de condominios</p>
         </div>
 
-        {/* Mensajes */}
         {errorMsg && (
           <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
             {errorMsg}
@@ -162,35 +227,34 @@ export default function LoginPage() {
           </div>
         )}
 
-        {/* Formulario */}
         <form onSubmit={handleSubmit} className="space-y-6">
-        <div>
-          <label className="block text-black font-medium mb-2">
-            Correo Electrónico
-          </label>
-          <input
-            type="email"
-            value={email}
-            onChange={(ev) => setEmail(ev.target.value)}
-            required
-            placeholder="ejemplo@correo.com"
-            className="w-full px-4 py-3 border border-gray-300 rounded-lg text-black placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition outline-none"
-          />
-        </div>
+          <div>
+            <label className="block text-black font-medium mb-2">
+              Correo Electrónico
+            </label>
+            <input
+              type="email"
+              value={email}
+              onChange={(ev) => setEmail(ev.target.value)}
+              required
+              placeholder="ejemplo@correo.com"
+              className="w-full px-4 py-3 border border-gray-300 rounded-lg text-black placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition outline-none"
+            />
+          </div>
 
-        <div>
-          <label className="block text-black font-medium mb-2">
-            Contraseña
-          </label>
-          <input
-            type="password"
-            value={password}
-            onChange={(ev) => setPassword(ev.target.value)}
-            required
-            placeholder="••••••••"
-            className="w-full px-4 py-3 border border-gray-300 rounded-lg text-black placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition outline-none"
-          />
-        </div>
+          <div>
+            <label className="block text-black font-medium mb-2">
+              Contraseña
+            </label>
+            <input
+              type="password"
+              value={password}
+              onChange={(ev) => setPassword(ev.target.value)}
+              required
+              placeholder="••••••••"
+              className="w-full px-4 py-3 border border-gray-300 rounded-lg text-black placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition outline-none"
+            />
+          </div>
 
           <button
             type="submit"
@@ -200,7 +264,6 @@ export default function LoginPage() {
           </button>
         </form>
 
-        {/* Link a registro */}
         <p className="text-center text-gray-600 mt-6">
           ¿No tienes cuenta?{" "}
           <Link
@@ -211,7 +274,6 @@ export default function LoginPage() {
           </Link>
         </p>
 
-        {/* Usuario demo */}
         <div className="mt-6 p-4 bg-blue-50 rounded-lg border border-blue-200">
           <p className="text-sm text-gray-700 mb-2">
             <strong>👤 Usuario demo:</strong>
