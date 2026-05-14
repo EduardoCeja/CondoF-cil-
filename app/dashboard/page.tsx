@@ -351,9 +351,6 @@ export default function DashboardPage() {
                 <h3 className="text-xl font-bold text-gray-800">
                   Notificaciones
                 </h3>
-                <p className="text-sm text-gray-600">
-                  HU-23 Confirmación de reserva · HU-22 Cambio de estatus · HU-21 Recordatorio de pago · Avisos del condominio.
-                </p>
               </div>
 
               <div className="text-sm text-gray-600">
